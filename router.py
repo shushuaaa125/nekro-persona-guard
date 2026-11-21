@@ -183,12 +183,14 @@ def create_router() -> APIRouter:
 
     @router.post("/api/vibe/run", summary="跑一次语感抽检（LLM）")
     async def api_vibe_run(payload: dict = Body(default={})):
+        from . import core
         from . import vibe
 
         return {
             "ok": True,
-            "result": await vibe.run_check(
-                int(payload.get("days") or 1), int(payload.get("limit") or 30)
+            "result": await core.run_exclusive(
+                vibe.run_check,
+                int(payload.get("days") or 1), int(payload.get("limit") or 30),
             ),
         }
 
@@ -220,11 +222,13 @@ def create_router() -> APIRouter:
 
     @router.post("/api/chatcheck/run", summary="跑一次聊天事实抽检")
     async def api_chatcheck_run(payload: dict = Body(default={})):
+        from . import core
         from . import chatcheck
 
         return {
             "ok": True,
-            "result": await chatcheck.run_check(
+            "result": await core.run_exclusive(
+                chatcheck.run_check,
                 int(payload.get("days") or 1),
                 int(payload.get("limit") or 200),
                 bool(payload.get("use_llm", True)),
@@ -295,9 +299,10 @@ def create_router() -> APIRouter:
 
     @router.post("/api/consistency/run", summary="跑一次一致性检查")
     async def api_consistency_run():
+        from . import core
         from . import consistency
 
-        return {"ok": True, "result": await consistency.run_check()}
+        return {"ok": True, "result": await core.run_exclusive(consistency.run_check)}
 
     @router.get("/api/report.png", summary="今日日报卡片", include_in_schema=False)
     async def api_report_png(day: str = "", theme: str = "", layout: str = "", font: str = ""):
