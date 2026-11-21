@@ -10,6 +10,7 @@ import asyncio
 import json
 import re
 from datetime import date, datetime, timedelta
+import asyncio
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -511,6 +512,18 @@ BUILTIN_MODEL_RULES = {
         "让我(分步|逐步)"
     ]
 }
+
+# 审计类 LLM 调用同一时间只允许一轮，避免群刷屏时把配额打穿
+LLM_LOCK = asyncio.Lock()
+
+
+async def run_exclusive(fn, *args, **kwargs):
+    """同一时间只跑一轮审计；已经在跑就跳过，不排队。"""
+    if LLM_LOCK.locked():
+        return {"ok": False, "error": "已有一轮审计在跑，本次跳过"}
+    async with LLM_LOCK:
+        return await fn(*args, **kwargs)
+
 
 def model_rules() -> Dict[str, List[str]]:
     """模型腔：配置为空时用内置预设。"""
@@ -1495,7 +1508,8 @@ async def _maybe_chatcheck() -> None:
         from . import chatcheck
 
         if bool(getattr(_cfg(), "CHATCHECK_ENABLED", True)):
-            await chatcheck.run_check(1, int(getattr(_cfg(), "CHATCHECK_LIMIT", 40)))
+            await run_exclusive(chatcheck.run_check, 1,
+                                int(getattr(_cfg(), "CHATCHECK_LIMIT", 40)))
     except Exception as exc:  # noqa: BLE001
         plugin.logger.warning(f"[persona_guard] 聊天事实抽检跳过: {exc}")
 
