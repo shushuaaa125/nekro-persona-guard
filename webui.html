@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>人设哨兵</title>
+<style>
+  :root {
+    --bg: #0b1114; --panel: #121a1f; --line: #22303a;
+    --text: #dbe6ea; --dim: #7d919a; --accent: #9fd4e8; --warn: #ffc861; --bad: #ff8b8b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font-family: "Microsoft YaHei", system-ui, sans-serif; font-size: 14px; }
+  header { padding: 18px 24px; border-bottom: 1px solid var(--line); display: flex;
+           align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  header h1 { font-size: 17px; margin: 0; font-weight: 600; letter-spacing: .5px; }
+  header .sub { color: var(--dim); font-size: 12px; }
+  main { padding: 20px 24px; max-width: 1100px; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .card .k { color: var(--dim); font-size: 12px; margin-bottom: 8px; }
+  .card .v { font-size: 26px; font-weight: 600; }
+  .card .v small { font-size: 12px; color: var(--dim); font-weight: 400; margin-left: 4px; }
+  .card.ai .v { color: var(--warn); }
+  .card.bad .v { color: var(--bad); }
+  h2 { font-size: 13px; color: var(--dim); font-weight: 500; margin: 26px 0 10px; letter-spacing: .5px; }
+  table { width: 100%; border-collapse: collapse; background: var(--panel);
+          border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  th, td { padding: 9px 14px; text-align: right; font-size: 13px; }
+  th { color: var(--dim); font-weight: 500; font-size: 12px; border-bottom: 1px solid var(--line); }
+  td:first-child, th:first-child { text-align: left; }
+  tr + tr td { border-top: 1px solid var(--line); }
+  .num-warn { color: var(--warn); }
+  .num-bad { color: var(--bad); }
+  .bars { display: flex; align-items: flex-end; gap: 10px; height: 120px;
+          background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; }
+  .bar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; height: 100%; }
+  .bar .fill { width: 60%; background: linear-gradient(180deg, #ffc861, #a86f2a); border-radius: 4px 4px 0 0; min-height: 2px; }
+  .bar .lb { font-size: 11px; color: var(--dim); }
+  .hits { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .hit { padding: 10px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; align-items: baseline; }
+  .hit:last-child { border-bottom: none; }
+  .hit .t { color: var(--dim); font-size: 11px; width: 120px; flex: none; }
+  .hit .x { flex: 1; }
+  .hit .tag { font-size: 11px; padding: 1px 6px; border-radius: 4px; flex: none; }
+  .tag.ai { background: rgba(255, 200, 97, .14); color: var(--warn); border: 1px solid rgba(255, 200, 97, .35); }
+  .tag.cf { background: rgba(255, 139, 139, .12); color: var(--bad); border: 1px solid rgba(255, 139, 139, .35); }
+  textarea { width: 100%; height: 170px; background: #0e1519; color: var(--text);
+             border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+             font-family: Consolas, monospace; font-size: 12.5px; line-height: 1.6; resize: vertical; }
+  .row { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  button { padding: 7px 14px; border-radius: 7px; border: 1px solid var(--line);
+           background: #16232b; color: var(--accent); cursor: pointer; font-size: 13px; }
+  button:hover { background: #1b2d37; }
+  .dim { color: var(--dim); font-size: 12px; }
+  .empty { padding: 16px; color: var(--dim); }
+  .preview { margin-top: 12px; }
+  .preview img { max-width: 100%; border: 1px solid var(--line); border-radius: 10px; display: none; }
+  .card.match .v { font-size: 34px; }
+  .parts { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill { font-size: 12px; color: var(--dim); background: #16232b; border: 1px solid var(--line);
+          border-radius: 999px; padding: 3px 10px; }
+  .pill b { color: var(--text); font-weight: 600; }
+  .dialogue-wrap { margin-top: 12px; background: var(--panel); border: 1px solid var(--line);
+                   border-radius: 10px; padding: 12px 16px 10px; }
+  .dialogue-head { display: flex; justify-content: space-between; font-size: 12px; color: var(--dim); margin-bottom: 12px; }
+  .dialogue-head b { color: var(--text); font-weight: 600; }
+  .dialogue-track { position: relative; display: flex; gap: 3px; height: 8px; }
+  .dialogue-track .seg { flex: 1; border-radius: 4px; }
+  .seg.s1 { background: #9e7366; } .seg.s2 { background: #cc9e6b; }
+  .seg.s3 { background: #73aec7; } .seg.s4 { background: #6bd1a8; }
+  .marker { position: absolute; top: -8px; width: 10px; height: 10px; border-radius: 50%;
+            background: #e8eef2; box-shadow: 0 0 0 3px rgba(232,238,242,.18);
+            transform: translate(-5px, 5px); transition: left .6s cubic-bezier(.4,0,.2,1); }
+  .dialogue-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--dim); margin-top: 6px; }
+  .pill button.kill { background: none; border: none; color: #ff8b8b; cursor: pointer;
+                      font-size: 12px; padding: 0 0 0 6px; }
+  .dayinput { background: #16232b; color: var(--text); border: 1px solid var(--line);
+              border-radius: 7px; padding: 6px 10px; font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>人设哨兵</h1>
+  <span class="sub" id="cfgline">—</span>
+</header>
+<main>
+  <div class="cards">
+    <div class="card"><div class="k">今日消息</div><div class="v" id="total">—</div></div>
+    <div class="card ai"><div class="k">人机味命中</div><div class="v" id="ai">—</div></div>
+    <div class="card bad"><div class="k">设定冲突</div><div class="v" id="conflict">—</div></div>
+    <div class="card"><div class="k">称呼开头率</div><div class="v" id="addr">—<small>%</small></div></div>
+  </div>
+
+  <h2>人设匹配度（当前模型）</h2>
+  <div class="dialogue-wrap" id="dialogue-wrap" style="display:none">
+    <div class="dialogue-head"><span>对话感</span><b id="dialogue-band">—</b></div>
+    <div class="dialogue-track"><div class="seg s1"></div><div class="seg s2"></div><div class="seg s3"></div><div class="seg s4"></div><div class="marker" id="dialogue-marker"></div></div>
+    <div class="dialogue-labels"><span>小说感</span><span>偏小说感</span><span>偏对话感</span><span>对话感</span></div>
+  </div>
+  <div class="card match">
+    <div class="k" id="match-model">—</div>
+    <div class="v" id="match-score">—</div>
+    <div class="parts" id="match-parts"></div>
+  </div>
+
+  <h2>按会话统计（今日）</h2>
+  <table id="chats">
+    <thead><tr><th>会话</th><th>消息</th><th>人机味</th><th>冲突</th><th>称呼率</th></tr></thead>
+    <tbody><tr><td colspan="5" class="dim">今天还没有记录</td></tr></tbody>
+  </table>
+
+  <h2>角色习惯（不计入人机味）</h2>
+  <div class="row">
+    <input type="date" id="baseline-from" class="dayinput" title="信任期开始">
+    <input type="date" id="baseline-to" class="dayinput" title="信任期结束">
+    <button id="baseline-btn">按这个信任期重算</button>
+    <span class="dim" id="baseline-hint"></span>
+  </div>
+  <div class="parts" id="habit-list"></div>
+
+  <h2>最近新出现的说法（漂移信号）</h2>
+  <div class="hits" id="fresh-list"><div class="empty">点「按这个信任期重算」后看这里</div></div>
+
+  <h2>近七日人机味</h2>
+  <div class="bars" id="bars"></div>
+
+  <h2>最近命中</h2>
+  <div class="hits" id="hits"><div class="empty">还没有命中记录</div></div>
+
+  <h2>日报</h2>
+  <div class="row">
+    <input type="date" id="day" class="dayinput">
+    <button id="backfill-btn">回溯评分</button>
+    <button id="preview-btn">生成日报预览</button>
+    <button id="send-btn">发送日报到配置会话</button>
+    <span class="dim" id="hint"></span>
+  </div>
+  <div class="preview"><img id="preview-img" alt="日报"></div>
+
+  <h2>记忆 ↔ 人设卡 一致性</h2>
+  <div class="row">
+    <button id="cons-btn">跑一次一致性检查</button>
+    <span class="dim" id="cons-hint"></span>
+  </div>
+  <div class="hits" id="cons-list"></div>
+
+  <h2>规则（可直接改，保存后立即生效）</h2>
+  <textarea id="rules"></textarea>
+  <div class="row">
+    <button id="save">保存规则</button>
+    <button id="scan">立即扫描</button>
+    <span class="dim" id="hint2"></span>
+  </div>
+</main>
+<script>
+const API = location.pathname.replace(/\/panel\/?$/, "");
+let rulesObj = null;
+
+function el(id) { return document.getElementById(id); }
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function dialogueScale(score) {
+  const wrap = el("dialogue-wrap");
+  if (!wrap) return;
+  wrap.style.display = "block";
+  const bands = [[75, "对话感"], [50, "偏对话感"], [25, "偏小说感"], [0, "小说感"]];
+  const label = bands.find(([th]) => score >= th)[1];
+  el("dialogue-band").textContent = label;
+  const pct = Math.max(3, Math.min(97, score));
+  el("dialogue-marker").style.left = pct + "%";
+}
+
+async function loadHabits() {
+  try {
+    const d = await (await fetch(`${API}/api/baseline`)).json();
+    const habits = d.habits || [];
+    const meta = d.data || {};
+    el("baseline-hint").textContent = meta.ok
+      ? `${meta.from || "近" + meta.days + "天"} ~ ${meta.to || "今"} · 样本 ${meta.messages} 条 · 习惯 ${habits.length} 条`
+      : "还没算过基线";
+    if (meta.from) el("baseline-from").value = meta.from;
+    if (meta.to) el("baseline-to").value = meta.to;
+    el("habit-list").innerHTML = habits.length
+      ? habits.map(h => `<span class="pill">${escapeHtml(h)}
+          <button class="kill" title="从白名单移除" data-p="${encodeURIComponent(h)}">×</button></span>`).join("")
+      : '<span class="dim">没有</span>';
+    el("habit-list").querySelectorAll("button.kill").forEach(btn => {
+      btn.onclick = () => overrideHabit(decodeURIComponent(btn.dataset.p), "exclude");
+    });
+  } catch (e) {
+    el("baseline-hint").textContent = "读取失败: " + e;
+  }
+}
+
+el("baseline-btn").onclick = async () => {
+  el("baseline-hint").textContent = "统计中…";
+  try {
+    const body = { from: el("baseline-from").value || "", to: el("baseline-to").value || "" };
+    const d = await (await fetch(`${API}/api/baseline/run`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    })).json();
+    const r = d.result || {};
+    el("baseline-hint").textContent = r.ok
+      ? `完成：${r.from} ~ ${r.to}，${r.messages} 条样本，习惯 ${r.habits.length} 条`
+      : ("失败：" + (r.error || ""));
+    loadHabits();
+    loadFresh();
+  } catch (e) {
+    el("baseline-hint").textContent = "失败: " + e;
+  }
+};
+
+async function overrideHabit(pattern, mode) {
+  try {
+    await fetch(`${API}/api/baseline/override`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pattern, mode }),
+    });
+    loadHabits();
+    loadFresh();
+  } catch (e) {
+    el("baseline-hint").textContent = "操作失败: " + e;
+  }
+}
+
+async function loadFresh() {
+  try {
+    const d = await (await fetch(`${API}/api/baseline/recent?days=7`)).json();
+    const items = (d.data && d.data.items) || [];
+    el("fresh-list").innerHTML = items.length ? items.map(x => `
+      <div class="hit">
+        <span class="t">${x.is_new ? "新出现" : "已有"}</span>
+        <span class="x">${escapeHtml(x.pattern)}</span>
+        <span class="tag ai">近7天 ${x.recent} · 基线 ${x.baseline}</span>
+      </div>`).join("") : '<div class="empty">最近没有新说法</div>';
+  } catch (e) {
+    el("fresh-list").innerHTML = '<div class="empty">读取失败</div>';
+  }
+}
+
+async function load(day) {
+  try {
+    const q = day ? `?day=${day}` : "";
+    const d = await (await fetch(`${API}/api/stats${q}`)).json();
+    const t = d.today || {};
+    el("total").textContent = t.total || 0;
+    el("ai").textContent = t.ai || 0;
+    el("conflict").textContent = t.conflict || 0;
+    const pct = t.total ? Math.round(100 * (t.address || 0) / t.total) : 0;
+    el("addr").innerHTML = pct + "<small>%</small>";
+    const c = d.config || {};
+    const m = (d.report && d.report.match) || {};
+    el("match-model").textContent = (m.model || "未知模型") + " · 今日 " + (m.family || "");
+    if (m.insufficient) {
+      el("match-score").innerHTML = '样本不足<small></small>';
+      el("match-score").style.color = "#7d919a";
+      el("match-score").style.fontSize = "22px";
+      el("match-parts").innerHTML =
+        `<span class="pill">今日 ${m.total || 0} 条 · 建议 ≥ ${m.min_sample || 20} 条</span>`;
+    } else {
+      const sc = Number(m.score || 0);
+      el("match-score").style.fontSize = "34px";
+      el("match-score").innerHTML = sc.toFixed(0) + '<small>/100</small>';
+      el("match-score").style.color = sc >= 75 ? "#8cdca0" : (sc >= 55 ? "#ffc861" : "#ff8b8b");
+      el("match-parts").innerHTML = Object.entries(m.parts || {})
+        .map(([k, v]) => `<span class="pill">${k} <b>${v}</b></span>`).join("")
+        + Object.entries(d.report.dialects || {})
+          .filter(([, v]) => v > 0)
+          .map(([k, v]) => {
+            const label = { base: "通用", gemini: "Gemini 腔", deepseek: "DeepSeek 腔",
+              claude: "Claude 腔", gpt: "GPT 腔", qwen: "Qwen 腔", glm: "GLM 腔",
+              doubao: "豆包 腔" }[k] || k;
+            return `<span class="pill">${label} <b>${v}</b></span>`;
+          }).join("");
+    }
+
+    const model = (d.report && d.report.model) || "";
+    el("cfgline").textContent =
+      `阈值 ${c.threshold} 次/天 · 统计 ${c.scan_seconds}s · 日报 ${c.auto_report ? c.report_hour + " 点" : "关"}`
+      + (model ? ` · 模型 ${model}` : "");
+
+    const chats = (d.report && d.report.chats) || [];
+    el("chats").querySelector("tbody").innerHTML = chats.length ? chats.map(x => {
+      const rate = x.total ? Math.round(100 * x.address / x.total) + "%" : "—";
+      return `<tr><td>${escapeHtml(x.name)}</td><td>${x.total}</td>
+        <td class="${x.ai ? "num-warn" : ""}">${x.ai}</td>
+        <td class="${x.conflict ? "num-bad" : ""}">${x.conflict}</td>
+        <td>${rate}</td></tr>`;
+    }).join("") : '<tr><td colspan="5" class="dim">今天还没有记录</td></tr>';
+
+    const tr = d.trend || [];
+    const max = Math.max(1, ...tr.map(x => x.ai || 0));
+    el("bars").innerHTML = tr.map(x => {
+      const h = Math.round(100 * (x.ai || 0) / max);
+      return `<div class="bar"><div class="fill" style="height:${h}%"></div>
+        <div class="lb">${(x.date || "").slice(5)}·${x.ai || 0}</div></div>`;
+    }).join("");
+
+    const hits = d.recent || [];
+    el("hits").innerHTML = hits.length ? hits.map(h => {
+      const tags = [];
+      if (h.ai && h.ai.length) tags.push('<span class="tag ai">人机味</span>');
+      if (h.conflict && h.conflict.length) tags.push('<span class="tag cf">冲突</span>');
+      const chat = h.chat_name
+        ? `${h.chat_kind || ""}·${h.chat_name}${h.chat_no && h.chat_no !== h.chat_name ? "(" + h.chat_no + ")" : ""}`
+        : (h.chat_key || "");
+      return `<div class="hit"><span class="t">${h.time || ""}</span>
+        <span class="x"><span class="dim">${escapeHtml(chat)}</span> · ${escapeHtml(h.text || "")}</span>${tags.join("")}</div>`;
+    }).join("") : '<div class="empty">还没有命中记录</div>';
+
+    if (!rulesObj) {
+      rulesObj = d.rules || {};
+      el("rules").value = JSON.stringify(rulesObj, null, 2);
+    }
+  } catch (e) {
+    el("hint2").textContent = "加载失败: " + e;
+  }
+}
+
+async function loadCons() {
+  try {
+    const d = await (await fetch(`${API}/api/consistency`)).json();
+    const c = d.data || {};
+    const list = c.conflicts || [];
+    el("cons-hint").textContent = c.ok
+      ? `上次检查 ${c.checked_at} · 记忆 ${c.entries} 条 · 冲突 ${list.length} 处`
+      : "还没有检查过";
+    el("cons-list").innerHTML = list.length ? list.map(x => `
+      <div class="hit">
+        <span class="t">${escapeHtml(String(x.severity || ""))}</span>
+        <span class="x"><b>${escapeHtml(String(x.topic || ""))}</b><br>
+          <span class="dim">人设卡：</span>${escapeHtml(String(x.card || ""))}<br>
+          <span class="dim">记忆：</span>${escapeHtml(String(x.memory || ""))}</span>
+        <span class="tag cf">${escapeHtml(String(x.source || ""))}</span>
+      </div>`).join("") : '<div class="empty">没有发现矛盾</div>';
+  } catch (e) {
+    el("cons-hint").textContent = "读取失败: " + e;
+  }
+}
+
+el("cons-btn").onclick = async () => {
+  el("cons-hint").textContent = "检查中…（一次 LLM 调用）";
+  try {
+    const d = await (await fetch(`${API}/api/consistency/run`, { method: "POST" })).json();
+    const r = d.result || {};
+    el("cons-hint").textContent = r.ok
+      ? `完成：记忆 ${r.entries} 条，发现 ${r.count} 处冲突`
+      : ("失败：" + (r.error || ""));
+    loadCons();
+  } catch (e) {
+    el("cons-hint").textContent = "检查失败: " + e;
+  }
+};
+
+el("backfill-btn").onclick = async () => {
+  const day = el("day").value;
+  if (!day) { el("hint").textContent = "先选日期"; return; }
+  el("hint").textContent = "回溯分析中…（重要日期建议先备份）";
+  try {
+    const d = await (await fetch(`${API}/api/backfill`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: day }),
+    })).json();
+    const r = (d.result || {});
+    el("hint").textContent = `已分析 ${r.scanned || 0} 条（${day}）`;
+    load(day);
+  } catch (e) {
+    el("hint").textContent = "回溯失败: " + e;
+  }
+};
+
+el("preview-btn").onclick = () => {
+  const img = el("preview-img");
+  const day = el("day").value;
+  img.src = `${API}/api/report.png?t=${Date.now()}` + (day ? `&day=${day}` : "");
+  img.style.display = "block";
+  el("hint").textContent = "已生成";
+};
+
+el("send-btn").onclick = async () => {
+  el("hint").textContent = "发送中…";
+  try {
+    const d = await (await fetch(`${API}/api/report/send`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+    })).json();
+    const r = d.result || {};
+    el("hint").textContent = r.sent ? `已发送到 ${r.sent.length} 个会话` : ("未发送: " + JSON.stringify(r));
+  } catch (e) {
+    el("hint").textContent = "发送失败: " + e;
+  }
+};
+
+el("save").onclick = async () => {
+  try {
+    const obj = JSON.parse(el("rules").value);
+    const r = await fetch(`${API}/api/rules`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(obj),
+    });
+    const d = await r.json();
+    el("hint2").textContent = d.ok ? "已保存" : ("保存失败: " + (d.error || ""));
+    rulesObj = null;
+    load();
+  } catch (e) {
+    el("hint2").textContent = "JSON 格式不对: " + e.message;
+  }
+};
+
+el("scan").onclick = async () => {
+  el("hint2").textContent = "扫描中…";
+  try {
+    const d = await (await fetch(`${API}/api/scan`, { method: "POST" })).json();
+    el("hint2").textContent = "扫描完成: " + JSON.stringify(d.result || {});
+    load();
+  } catch (e) {
+    el("hint2").textContent = "扫描失败: " + e;
+  }
+};
+
+load();
+loadCons();
+loadHabits();
+loadFresh();
+setInterval(load, 15000);
+</script>
+</body>
+</html>
