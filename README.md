@@ -79,6 +79,17 @@ PLUGIN_ENABLED:
 3. 重启 NA
 4. 打开 `http://<你的NA>:8021/plugins/shushu.persona_guard/panel`
 
+### 依赖
+
+卡片是用 Pillow 画的，NA 官方镜像**默认不带**，要自己装一次：
+
+```bash
+docker exec -it nekro_agent /app/.venv/bin/pip install pillow
+docker compose restart nekro_agent
+```
+
+没装的表现：日报/投诉卡生成失败，日志里出现 `ModuleNotFoundError: No module named 'PIL'`。
+
 ### 字体（可选）
 
 卡片默认用插件目录下 `fonts/` 里的字体：
