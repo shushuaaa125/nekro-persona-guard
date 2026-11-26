@@ -90,20 +90,47 @@ docker compose restart nekro_agent
 
 没装的表现：日报/投诉卡生成失败，日志里出现 `ModuleNotFoundError: No module named 'PIL'`。
 
-### 字体（可选）
+### 字体（重要）
 
-卡片默认用插件目录下 `fonts/` 里的字体：
+卡片默认用插件目录 `fonts/` 里的字体：
 
 ```
-NotoSansCJK-Regular.ttc   正文字体（必需，缺失会回退到系统字体）
+NotoSansCJK-Regular.ttc   正文字体（必需）
 NotoSansCJK-Bold.ttc      粗体
-ZCOOLKuaiLe-Regular.ttf   标题字体（快乐体）
-SmileySans-Oblique.ttf    标题字体（得意黑）
-HYNuoMiTuanW.ttf          标题字体（糯米团）
+ZCOOLKuaiLe-Regular.ttf   标题（快乐体）
+SmileySans-Oblique.ttf    标题（得意黑）
+HYNuoMiTuanW.ttf          标题（糯米团）
 ```
 
-只放 Noto 也能跑；标题字体缺省会回退到 Noto。
-系统里有 `msyh.ttc` / `wqy-microhei.ttc` / `NotoSansCJK` 时会自动用它们。
+**卡片上出现方框（□□）就是缺中文字体**，两种修法任选：
+
+#### 方法 A：容器里装字体（最快）
+
+```bash
+docker exec -it nekro_agent bash -c "apt-get update && apt-get install -y fonts-noto-cjk && fc-cache -f"
+docker restart nekro_agent
+```
+
+缺点：容器重建（换镜像 / 重新 compose up）后要重装。
+
+#### 方法 B：字体放进插件目录（持久，推荐）
+
+```
+plugins/packages/persona_guard/fonts/NotoSansCJK-Regular.ttc
+plugins/packages/persona_guard/fonts/NotoSansCJK-Bold.ttc
+```
+
+```bash
+docker restart nekro_agent
+```
+
+文件名必须完全一致，否则不会被识别。字体下载：<https://fonts.google.com/noto/specimen/Noto+Sans+SC>
+
+#### 方法 C：标题字体（可选）
+
+想让标题有设计感，再把 `SmileySans-Oblique.ttf`（默认）或 `ZCOOLKuaiLe-Regular.ttf` 放进同一目录；不放也行，会回退到 Noto 正文字体。
+
+如果系统里已经有中文字体（`msyh.ttc`、`wqy-microhei.ttc`、系统自带 Noto CJK），插件会自动用它们，不需要额外配置。
 
 ---
 
